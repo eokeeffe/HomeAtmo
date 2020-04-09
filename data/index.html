@@ -36,40 +36,32 @@
     </head>
     <!-- BODY -->
     <body>
-        <h2> Bed Room Atmospherics</h2>
-        <div>
+        <h2> Bed Room Atmospherics </h2>
+        <div style="float:left;">
             <h3>Temperature</h3>
-            <canvas id="chart-temperature"><canvas\>
-            <p id="temp">0</p>
+            <canvas id="chart-temperature"></canvas>
+            <p id="temperature">0</p>
         </div>
-        <br />
-        <br />
-        <div>
+        <div style="float:left;">
             <h3>Humidity</h3>
-            <canvas id="chart-humidity"><canvas\>
-
-            </canvas>
-            <p id="hum">0</p>
+            <canvas id="chart-humidity"></canvas>
+            <p id="humidity">0</p>
         </div>
-        <br />
-        <br />
-        <div>
+        <div style="float:left;">
             <h3>Pressure</h3>
-            <canvas id="chart-pressure"><canvas\>
-            <p id="press">0</p>
+            <canvas id="chart-pressure"></canvas>
+            <p id="pressure">0</p>
         </div>
         <br />
         <br />
-        <div>
+        <div style="float:left;">
             <h3>Indoor Air Quality (IAQ)</h3>
-            <canvas id="chart-iaq"><canvas\>
+            <canvas id="chart-iaq"></canvas>
             <p id="iaq">0</p>
         </div>
-        <br />
-        <br />
-        <div>
+        <div style="float:left;">
             <h3>CO<sub>2</sub></h3>
-            <canvas id="chart-co2"><canvas\>
+            <canvas id="chart-co2"></canvas>
             <p id="co2">0</p>
         </div>
         <br />
@@ -77,6 +69,11 @@
     </body>
 
     <!-- SCRIPT  -->
+
+    <script>
+
+    </script>
+
     <script>
         var opts = {
             angle: 0,
@@ -98,7 +95,7 @@
         };
         // TEMPERATURE
         var temperature_target = document.getElementById('chart-temperature');
-        var temp_val = document.getElementById('temp');
+        var temp_val = document.getElementById('temperature');
         var temp_gauge = new Gauge(temperature_target).setOptions(opts);
         temp_gauge.maxValue = 40;
         temp_gauge.minValue = 15;
@@ -113,9 +110,10 @@
         };
         temp_request.open("GET", "/temperature", true);
         temp_request.send();
+
         //HUMIDITY
         var humidity_target = document.getElementById('chart-humidity');
-        var hum_val = document.getElementById('hum');
+        var hum_val = document.getElementById('humidity');
         var hum_gauge = new Gauge(humidity_target).setOptions(opts);
         hum_gauge.maxValue = 100;
         hum_gauge.minValue = 0;
@@ -132,7 +130,7 @@
         hum_request.send();
         // PRESSURE
         var pressure_target = document.getElementById('chart-pressure');
-        var press_val = document.getElementById('press');
+        var press_val = document.getElementById('pressure');
         var press_gauge = new Gauge(pressure_target).setOptions(opts);
         press_gauge.maxValue = 1200;
         press_gauge.minValue = 900;
@@ -176,7 +174,7 @@
             if (this.readyState == 4 && this.status == 200) {
                 var y = parseFloat(this.responseText);
                 co2_gauge.set(y);
-                co2_val.innerHTML = y + "ppm";
+                co2_val.innerHTML = y + " ppm";
             }
         };
         co2_request.open("GET", "/co2", true);
