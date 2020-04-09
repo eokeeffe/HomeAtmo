@@ -61,3 +61,8 @@ Finally, the lid must be closed by pushing it into the slots provided.
 
 I glued the USB connector to the case for more stability.
 Connect the USB cable to the power supply, plug everything to the wall socket and you are done!
+
+############Uploading SPIFFS using PlatformIO
+When using PlatformIO open a terminal and type this to get the files in the data folder uploaded
+
+platformio run --target uploadfs
