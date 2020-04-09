@@ -6,11 +6,12 @@
 #include "bsec.h"
 
 #include "WiFi.h"
+#include <SPIFFS.h>
 #include <HTTPClient.h>
 #include <ESPAsyncWebServer.h>
-#include <movingAvg.h>
+//#include <movingAvg.h>
 
-#include "html.h"
+//#include "html.h"
 #include "creds.h"
 
 /******* TIMER/TASK VARIABLES *******/
@@ -44,6 +45,8 @@ float pressure = 0.0;
 float humidity = 0.0;
 float iaq = 0.0;
 float co2Equivalent = 0.0;
+
+#define IFTTT_UPDATE_ENABLED 0
 
 void load_state(void) {
     if (EEPROM.read(0) == BSEC_MAX_STATE_BLOB_SIZE) {
@@ -146,16 +149,23 @@ void setup() {
     sensor.updateSubscription(sensor_list, 5, BSEC_SAMPLE_RATE_LP);
     check_IAQ_sensor_status();
 
+    Serial.print("Starting SPIFFS ");
+    if(!SPIFFS.begin(true)){
+        Serial.println("An Error has occurred while mounting SPIFFS");
+        return;
+    }
+    Serial.println("");
+
     Serial.print("#### Connecting to WiFi");
     WiFi.begin(SSID, PSK);
 
     while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
+        delay(1000);
         Serial.print(".");
     }
     Serial.println("");
 
-    tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA ,"HomeAtmo");
+    tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA ,"bedroom_atmo");
     Serial.println("#### WiFi connected.");
     Serial.print("#### IP address: ");
     Serial.println(WiFi.localIP());
@@ -164,8 +174,14 @@ void setup() {
 
     // Route for root / web page
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, "text/html", INDEX_HTML);
+        request->send(SPIFFS, "/index.html", "text/html");
     });
+    
+    server.on("/gauge.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(SPIFFS, "/gauge.min.js", "text/javascript");
+    });
+
+    // Sensor status figures
     server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send_P(200, "text/plain", String(temperature).c_str());
     });
@@ -188,7 +204,7 @@ void setup() {
 
 void loop() {
     if (millis() - last_check > hour) {
-        if (iaq > 100) {
+        if ((iaq > 100) & IFTTT_UPDATE_ENABLED) {
             Serial.println("BAD QUALITY");
 
             http.begin(IFTTT);

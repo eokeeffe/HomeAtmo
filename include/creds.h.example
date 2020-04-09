@@ -2,5 +2,5 @@
 
 static const char* IFTTT = "INSERT URL HERE";
 
-static const char *SSID = "ISERT YOUR SSID HERE";
-static const char *PSK = "INSERT YOUR PSK HERE";
+static const char *SSID = "DJokerAP";
+static const char *PSK = "Nbn3xhyxzejk6942#";
