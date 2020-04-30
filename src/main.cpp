@@ -1,5 +1,5 @@
 /******* INCLUDES *******/
-#include <Arduino.h>
+#include <Arduino.h> 
 
 #include <EEPROM.h>
 #include <Wire.h>
@@ -45,8 +45,23 @@ float pressure = 0.0;
 float humidity = 0.0;
 float iaq = 0.0;
 float co2Equivalent = 0.0;
+const int PM_LENGTH = 12;
+float PM[PM_LENGTH];
 
 #define IFTTT_UPDATE_ENABLED 0
+
+bool connection_state = false;
+
+struct pms5003data {
+  uint16_t framelen;
+  uint16_t pm10_standard, pm25_standard, pm100_standard;
+  uint16_t pm10_env, pm25_env, pm100_env;
+  uint16_t particles_03um, particles_05um, particles_10um, particles_25um, particles_50um, particles_100um;
+  uint16_t unused;
+  uint16_t checksum;
+};
+
+struct pms5003data data;
 
 void load_state(void) {
     if (EEPROM.read(0) == BSEC_MAX_STATE_BLOB_SIZE) {
@@ -123,11 +138,70 @@ void check_IAQ_sensor_status(void) {
     }
 }
 
+boolean readPMSdata(Stream *s) {
+  if (! s->available()) {
+    return false;
+  }
+  
+  // Read a byte at a time until we get to the special '0x42' start-byte
+  if (s->peek() != 0x42) {
+    s->read();
+    return false;
+  }
+
+  // Now read all 32 bytes
+  if (s->available() < 32) {
+    return false;
+  }
+    
+  uint8_t buffer[32];    
+  uint16_t sum = 0;
+  s->readBytes(buffer, 32);
+
+  // get checksum ready
+  for (uint8_t i=0; i<30; i++) {
+    sum += buffer[i];
+  }
+
+  /* debugging
+  for (uint8_t i=2; i<32; i++) {
+    Serial.print("0x"); Serial.print(buffer[i], HEX); Serial.print(", ");
+  }
+  Serial.println();
+  */
+  
+  // The data comes in endian'd, this solves it so it works on all platforms
+  uint16_t buffer_u16[15];
+  for (uint8_t i=0; i<15; i++) {
+    buffer_u16[i] = buffer[2 + i*2 + 1];
+    buffer_u16[i] += (buffer[2 + i*2] << 8);
+  }
+
+  // put it into a nice struct :)
+  memcpy((void *)&data, (void *)buffer_u16, 30);
+
+  if (sum != data.checksum) {
+    Serial.println("Checksum failure");
+    return false;
+  }
+  // success!
+  return true;
+}
+
 void setup() {
+
+    for(int i=0;i<PM_LENGTH;i++){
+        PM[i] = 0.0;
+    }
+
     Serial.begin(115200);
 
     Serial.println("#### Setting up sensor.");
     EEPROM.begin(BSEC_MAX_STATE_BLOB_SIZE + 1);
+
+    Serial2.begin(9600, SERIAL_8N1, 16, 17);
+    while(!Serial2){}
+    Serial.println("Talking with PMS5003");
 
     Wire.begin();
     sensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
@@ -163,6 +237,8 @@ void setup() {
         delay(1000);
         Serial.print(".");
     }
+    connection_state = 1;
+
     Serial.println("");
 
     tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA ,"bedroom_atmo");
@@ -198,12 +274,70 @@ void setup() {
         request->send_P(200, "text/plain", String(co2Equivalent).c_str());
     });
 
+    server.on("/pm10_standard", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[0]).c_str());
+    });
+    server.on("/pm25_standard", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[1]).c_str());
+    });
+    server.on("/pm100_standard", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[2]).c_str());
+    });
+
+    server.on("/pm10_env", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[3]).c_str());
+    });
+    server.on("/pm25_env", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[4]).c_str());
+    });
+    server.on("/pm100_env", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[5]).c_str());
+    });
+
+    server.on("/particles_03um", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[6]).c_str());
+    });
+    server.on("/particles_05um", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[7]).c_str());
+    });
+    server.on("/particles_10um", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[8]).c_str());
+    });
+    server.on("/particles_25um", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[9]).c_str());
+    });
+    server.on("/particles_50um", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[10]).c_str());
+    });
+    server.on("/particles_100um", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", String(PM[11]).c_str());
+    });
+
     server.begin();
     Serial.println("#### Server Started.");
 }
 
 void loop() {
+
+    if ((WiFi.status() != WL_CONNECTED) && (connection_state != 1)) { connection_state = 0; }
+
+    if(!connection_state){
+        Serial.println("WIFI Connection dropped");
+        Serial.println("Connecting Again");
+
+        
+        Serial.print("#### Connecting to WiFi");
+        WiFi.begin(SSID, PSK);
+
+        while (WiFi.status() != WL_CONNECTED) {
+            delay(1000);
+            Serial.print(".");
+        }
+        connection_state = 1;
+    }
+
     if (millis() - last_check > hour) {
+        
         if ((iaq > 100) & IFTTT_UPDATE_ENABLED) {
             Serial.println("BAD QUALITY");
 
@@ -232,9 +366,45 @@ void loop() {
         co2Equivalent = sensor.co2Equivalent;
         iaq = sensor.iaq;
 
+        
+
         update_state();
     } else {
         check_IAQ_sensor_status();
+    }
+
+    if (readPMSdata(&Serial2)) {
+        PM[0]=data.pm10_standard;
+        PM[1]=data.pm25_standard;
+        PM[2]=data.pm100_standard;
+        PM[3]=data.pm10_env;
+        PM[4]=data.pm25_env;
+        PM[5]=data.pm100_env;
+        PM[6]=data.particles_03um;
+        PM[7]=data.particles_05um;
+        PM[8]=data.particles_10um;
+        PM[9]=data.particles_25um;
+        PM[10]=data.particles_50um;
+        PM[11]=data.particles_100um;
+        
+        /*
+        Serial.println("Concentration Units (standard)");
+        Serial.print("PM 1.0: "); Serial.print(data.pm10_standard);
+        Serial.print("\t\tPM 2.5: "); Serial.print(data.pm25_standard);
+        Serial.print("\t\tPM 10: "); Serial.println(data.pm100_standard);
+        Serial.println("---------------------------------------");
+        Serial.println("Concentration Units (environmental)");
+        Serial.print("PM 1.0: "); Serial.print(data.pm10_env);
+        Serial.print("\t\tPM 2.5: "); Serial.print(data.pm25_env);
+        Serial.print("\t\tPM 10: "); Serial.println(data.pm100_env);
+        Serial.println("---------------------------------------");
+        Serial.print("Particles > 0.3um / 0.1L air:"); Serial.println(data.particles_03um);
+        Serial.print("Particles > 0.5um / 0.1L air:"); Serial.println(data.particles_05um);
+        Serial.print("Particles > 1.0um / 0.1L air:"); Serial.println(data.particles_10um);
+        Serial.print("Particles > 2.5um / 0.1L air:"); Serial.println(data.particles_25um);
+        Serial.print("Particles > 5.0um / 0.1L air:"); Serial.println(data.particles_50um);
+        Serial.print("Particles > 10.0 um / 0.1L air:"); Serial.println(data.particles_100um);
+        */
     }
 
     vTaskDelay((second * 5) / portTICK_PERIOD_MS);

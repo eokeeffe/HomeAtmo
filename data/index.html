@@ -3,6 +3,8 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <meta charset="utf-8"/>
+        <meta http-equiv="Refresh" content="30">
+        
         <script src="gauge.min.js"></script>
         <!-- CSS -->
         <style>
@@ -66,6 +68,55 @@
         </div>
         <br />
         <br />
+
+        <table style="width:100%">
+            <tr>
+              <th> Concentration Units (standard) </th>
+              <th>PM 1.0</th>
+              <th>PM 2.5</th>
+              <th>PM  10</th>
+            </tr>
+            <tr>
+                <th> </th>
+                <th id="pm1">0</th>
+                <th id="pm25">0</th>
+                <th id="pm10"> 0</th>
+            </tr>
+
+            <tr>
+                <th> Concentration Units (environmental) </th>
+                <th>PM 1.0</th>
+                <th>PM 2.5</th>
+                <th>PM  10</th>
+            </tr>
+            <tr>
+                <th> </th>
+                <th id="epm1">0</th>
+                <th id="epm25">0</th>
+                <th id="epm10">0</th>
+            </tr>
+
+            <tr>
+                <th> Particulates </th>
+                <th> > 0.3um / 0.1L air </th>
+                <th> > 0.5um / 0.1L air </th>
+                <th> > 1.0um / 0.1L air </th>
+                <th> > 2.5um / 0.1L air </th>
+                <th> > 5.0um / 0.1L air </th>
+                <th> > 10.0um / 0.1L air </th>
+            </tr>
+            <tr>
+                <th> </th>
+                <th id="p03">0</th>
+                <th id="p05">0</th>
+                <th id="p10">0</th>
+                <th id="p25">0</th>
+                <th id="p50">0</th>
+                <th id="p100">0</th>
+            </tr>
+
+        </table>
+
     </body>
 
     <!-- SCRIPT  -->
@@ -179,5 +230,140 @@
         };
         co2_request.open("GET", "/co2", true);
         co2_request.send();
+
+        // PM 2.5 Sensor requests
+        var pm1 = document.getElementById('pm1');
+        var pm25 = document.getElementById('pm25');
+        var pm100 = document.getElementById('pm100');
+        var epm1 = document.getElementById('epm1');
+        var epm25 = document.getElementById('epm25');
+        var epm100 = document.getElementById('epm100');
+        var p03 = document.getElementById('p03');
+        var p05 = document.getElementById('p05');
+        var p10 = document.getElementById('p10');
+        var p25 = document.getElementById('p25');
+        var p50 = document.getElementById('p50');
+        var p100 = document.getElementById('p100');
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                pm1.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/pm10_standard", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                pm25.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/pm25_standard", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                pm100.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/pm100_standard", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                epm1.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/pm10_env", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                epm25.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/pm25_env", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                epm100.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/pm100_env", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                p03.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/particles_03um", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                p05.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/particles_05um", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                p10.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/particles_10um", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                p25.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/particles_25um", true);
+        PM.send();
+
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                p50.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/particles_50um", true);
+        PM.send();
+        
+        var PM = new XMLHttpRequest();
+        PM.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var y = parseFloat(this.responseText);
+                p100.innerHTML = y ;
+            }
+        };
+        PM.open("GET", "/particles_100um", true);
+        PM.send();
+        
     </script>
 </html>
